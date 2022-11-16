@@ -1,0 +1,4 @@
+CALL ADD_USER("RTYLERR@UMICH.EDU", "0be64ae89ddd24e225434de95d501711339baeee18f009ba9b4369af27d30d60");
+CALL ADD_PROPERTY(1,'TYLER\'S BAR',2500,'BAR',2,'Make sure to mop floors in bathrooms on both floors.','149 Pace Drive South',0,0,'COMMERCIAL');
+CALL ADD_APPOINTMENT( 1, '2023-01-02 06:00:00', NULL, 'SCHEDULED' );
+
