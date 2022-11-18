@@ -30,12 +30,34 @@ public class UserDTO {
 	@Column(name = "ACTIVE", nullable = true, unique = false)
 	private String active;
 	
+	@Column(name = "ROLE", nullable = false, unique = false)
+	private String role;
+	
+	public UserDTO() {
+		this.role="USER";
+	}
+	
 	public UserDTO(Integer userId, String email, String pass) {
 		this.userId = userId;
 		this.email = email;
 		this.pass = pass;
+		this.role="USER";
 	}
 	
+	public UserDTO(Integer userId, String email, String pass, String role) {
+		this.userId = userId;
+		this.email = email;
+		this.pass = pass;
+		this.role=role;
+	}
+	
+	public UserDTO( String email, String pass) {
+		this.email = email;
+		this.pass = pass;
+		this.active = "Y";
+		this.role = "USER";
+		this.paymentStatus="PAID";
+	}
 	
 	public Integer getUserId() {
 		return userId;
@@ -71,6 +93,14 @@ public class UserDTO {
 	@Override
 	public String toString() {
 		return ReflectionToStringBuilder.toString(this);
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
 	}
 
 }

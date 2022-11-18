@@ -7,12 +7,13 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.stereotype.Component;
 
 import com.pcs.model.UserDTO;
 import com.pcs.repo.UserRepository;
 import com.pcs.util.SecurityUtil;
 
-
+@Component
 public class PCSTokenAuthenticationProvider implements AuthenticationProvider {
 	
 	@Autowired
@@ -26,12 +27,13 @@ public class PCSTokenAuthenticationProvider implements AuthenticationProvider {
 
 	private Authentication getValidationToken(String customToken) {
 		// call auth service to check validity of token
-		if(customToken.equalsIgnoreCase("UNSECURED_ENDPOINT")) {
+		if("UNSECURED_ENDPOINT".equalsIgnoreCase(customToken)) {
 			return new PreAuthenticatedAuthenticationToken("AuthenticatedUser", "ROLE_CLIENT");
 		}
 		
 		boolean isValid = false;
 		try {
+			System.out.println("attempting to validate with header ["+customToken+"]");
 			UserDTO user = SecurityUtil.validateAuthHeader(customToken);
 			if(user == null) {
 				isValid = false;
@@ -39,14 +41,15 @@ public class PCSTokenAuthenticationProvider implements AuthenticationProvider {
 				isValid = true;
 			}
 		} catch(Exception e) {
+			e.printStackTrace();
 			isValid = false;
 		}
 		// keeping boolean flag for simplicity
 		
 		if (isValid)
-			return new PreAuthenticatedAuthenticationToken("AuthenticatedUser", "ROLE_CLIENT");
+			return new PreAuthenticatedAuthenticationToken(customToken, customToken);
 		else
-			throw new AccessDeniedException("Invalid authetication token");
+			throw new AccessDeniedException("Invalid authetication token: "+customToken);
 
 	}
 

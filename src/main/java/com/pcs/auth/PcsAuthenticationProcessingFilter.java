@@ -14,7 +14,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.pcs.model.UserDTO;
@@ -22,7 +25,15 @@ import com.pcs.util.SecurityUtil;
 
 public class PcsAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
 	
-	private static final String NO_AUTH_ENDPOINTS = "/test,/android-client/auth";
+	private static final String NO_AUTH_ENDPOINTS = "/test,/android-client/auth,/android-client/new-user";
+	
+	public PcsAuthenticationProcessingFilter(){
+		super((RequestMatcher)new OrRequestMatcher(  new AntPathRequestMatcher("**") ));
+	};
+	
+	public PcsAuthenticationProcessingFilter(final RequestMatcher requiresAuth) {
+        super(requiresAuth);
+    }
 	
 	public PcsAuthenticationProcessingFilter(RequestMatcher requiresAuthenticationRequestMatcher,
 			AuthenticationManager authenticationManager) {
@@ -38,12 +49,14 @@ public class PcsAuthenticationProcessingFilter extends AbstractAuthenticationPro
 		String header = request.getHeader("X-Auth");
 		PreAuthenticatedAuthenticationToken token;
 		// Create a token object ot pass to Authentication Provider
-		if(Arrays.asList(NO_AUTH_ENDPOINTS.split(",")).contains(request.getContextPath())) {
+		System.out.println("path:"+ request.getServletPath());
+		if(Arrays.asList(NO_AUTH_ENDPOINTS.split(",")).contains(request.getServletPath())) {
+			System.out.println("unsecured endpoint called");
 			 token = new PreAuthenticatedAuthenticationToken("UNSECURED_ENDPOINT", null);
 		} else {
-			 token = new PreAuthenticatedAuthenticationToken(header, null);
+			 token = new PreAuthenticatedAuthenticationToken(header, header);
 		}
-		
+		System.out.println("authenticating...");
 		return getAuthenticationManager().authenticate(token);
 	}
 
@@ -52,6 +65,9 @@ public class PcsAuthenticationProcessingFilter extends AbstractAuthenticationPro
 			Authentication authResult) throws IOException, ServletException {
 		// Save user principle in security context
 		SecurityContextHolder.getContext().setAuthentication(authResult);
+		if(!Arrays.asList(NO_AUTH_ENDPOINTS.split(",")).contains(request.getServletPath())) {
+			response.setHeader("X-Auth",SecurityUtil.refreshAuthHeader(request.getHeader("X-Auth")));
+		}
 		chain.doFilter(request, response);
 	}
 

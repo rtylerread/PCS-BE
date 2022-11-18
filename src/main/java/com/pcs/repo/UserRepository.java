@@ -17,6 +17,8 @@ public interface UserRepository extends JpaRepository<UserDTO, Integer> {
 	UserDTO authUser(String EM, String PASSHASH);
 	
 	@Query(nativeQuery=true, value="call ADD_USER(:I_EMAIL, :I_PASS)")
-	void addUser(String I_EMAIL, String I_PASS);
+	UserDTO addUser(String I_EMAIL, String I_PASS);
 	
+	@Query(nativeQuery=true, value="call GET_USER(:EM)")
+	UserDTO getUser(String EM);
 }

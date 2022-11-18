@@ -74,23 +74,28 @@ public class SecurityUtil {
 	{
 		long now = System.currentTimeMillis();
 		long expireAt = System.currentTimeMillis() + expInterval;
-	    IvParameterSpec iv = generateIv();
+	    byte[] iv_bytes = generateIv();
+	    IvParameterSpec iv= new IvParameterSpec(iv_bytes);
 		return JWT.create()
 				.withIssuedAt(new Date(now))
 				.withExpiresAt( new Date(expireAt))
 				.withIssuer(jwtIssuer)
-				.withClaim("token", encrypt(String.format("%d~%s~%s~%s", user.getUserId(), user.getEmail(), user.getPass(),salt),generateKey(), iv)+"%$%"+iv.toString())
+				.withClaim("token", encrypt(String.format("%d~%s~%s~%s", user.getUserId(), user.getEmail(), user.getPass(),salt),generateKey(), iv)+"%$%"+Base64.getEncoder().encodeToString(iv_bytes))
 				.sign(Algorithm.HMAC512(secret));
 	}
 	
 	public static UserDTO validateAuthHeader(String header) {
 		try {
+			System.out.println("validating header");
 			DecodedJWT decoded = verifier.verify(header);
-			String[] a = decoded.getClaim("token").asString().split("%$%");
-			String[] decrypted = decrypt(a[0],new IvParameterSpec(a[1].getBytes())).split("~");
+			String[] a = decoded.getClaim("token").asString().split("%\\$%");
+			byte[] iv = new byte[16];
+			Base64.getDecoder().decode(a[1].getBytes(), iv);
+			String[] decrypted = decrypt(a[0],new IvParameterSpec(iv)).split("~");
 			return new UserDTO(Integer.parseInt(decrypted[0]),decrypted[1],decrypted[2]);
 			
 		} catch(Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}
@@ -98,6 +103,7 @@ public class SecurityUtil {
 	private static String encrypt(String unencrypted, SecretKey key, IvParameterSpec iv) 
 			throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException 
 	{
+		System.out.println("encrypting");
 	    Cipher cipher = Cipher.getInstance(algorithm);
 	    cipher.init(Cipher.ENCRYPT_MODE, key, iv);
 	    byte[] cipherText = cipher.doFinal(unencrypted.getBytes());
@@ -123,10 +129,20 @@ public class SecurityUtil {
 	    return secret;
 	}
 	
-	private static IvParameterSpec generateIv() {
+	private static byte[] generateIv() {
 	    byte[] iv = new byte[16];
-	    new SecureRandom().nextBytes(iv);
-	    return new IvParameterSpec(iv);
+	     new SecureRandom().nextBytes(iv);
+	     return iv;
+//	     new IvParameterSpec(iv);
+	}
+
+	public static String refreshAuthHeader(String header) {
+		try {
+			return genAuthHeader(validateAuthHeader(header));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }
